@@ -12,7 +12,7 @@ COOKIE_RULES_PATH = os.path.join(config.root_dir, "files", "cookie-rules.json")
 def db():
     if not MONGO['client']:
         MONGO['client'] = asyncmongo.Client(**config.mongo)
-    return MONGO['client']
+    return MONGO['client'].installs
 
 
 class Register(tornado.web.RequestHandler):
@@ -33,8 +33,8 @@ class Register(tornado.web.RequestHandler):
             self.finish()
         else:
             record = {"_id": install_id, "created_on": datetime.now(),
-                      "extension_version": ext_version, "client": client_name}
-            db().registrations.insert(record, callback=self._on_record)
+                      "client": client_name, "checkins": [], "pws": []}
+            db().insert(record, callback=self._on_record)
 
     def _on_record(self, result, error):
         response = {"ok": not error}
@@ -52,6 +52,7 @@ class CookieRules(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self):
         install_id = self.get_argument("id", False)
+        ext_version = self.get_argument("ext_version", False)
         if not install_id:
             self.write(json_encode({"ok": False, "msg": "missing install id"}))
             self.finish()
@@ -60,8 +61,11 @@ class CookieRules(tornado.web.RequestHandler):
             rules = handle.read()
             handle.close()
             cb = lambda result, error: self._on_record(rules, result, error)
-            record = {"install_id": install_id, "created_on": datetime.now()}
-            db().checkins.insert(record, callback=cb)
+            query = {"_id": install_id}
+            update = {"$push": {
+                "checkins": {"created_on": datetime.now(), "ext_version": ext_version}
+            }}
+            db().update(query, update, callback=cb)
 
     # First record the checkin, then read the latest cookie list and send
     # it back over the wire
@@ -85,8 +89,11 @@ class PasswordEntered(tornado.web.RequestHandler):
             self.write(json_encode({"ok": False, "msg": error}))
             self.finish()
         else:
-            record = {"install_id": install_id, "host": host, "created_on": datetime.now()}
-            db().password_entries.insert(record, callback=self._on_record)
+            query = {"_id": install_id}
+            update = {"$push": {
+                "pws": {"host": host, "created_on": datetime.now()}
+            }}
+            db().update(query, update, callback=self._on_record)
 
     def _on_record(self, result, error):
         if error:
