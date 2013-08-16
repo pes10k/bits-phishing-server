@@ -2,15 +2,60 @@
     "version": 1,
     "rules": {
         "www.facebook.com": {
-            "cookie": "xs",
+            "cookies": [
+                {
+                    "name": "xs",
+                    "domain": ".facebook.com",
+                    "path": "/",
+                    "secure": true
+                }
+            ],
             "rate": 0.25
         },
         "mail.google.com": {
-            "cookie": "GX",
+            "cookies": [
+                {
+                    "name": "SSID",
+                    "domain": ".google.com",
+                    "path": "/",
+                    "secure": true
+                },
+                {
+                    "name": "GX",
+                    "domain": ".mail.google.com",
+                    "path": "/mail",
+                    "secure": true
+                }
+            ],
             "rate": 0.25
         },
         "github.com": {
-            "cookie": "_gh_sess",
+            "cookies": [
+                {
+                    "name": "_gh_sess",
+                    "domain": "github.com",
+                    "path": "/",
+                    "secure": true
+                },
+                {
+                    "name": "spy_user",
+                    "domain": "github.com",
+                    "path": "/",
+                    "secure": true
+                }
+
+            ],
+            "rate": 0.1
+        },
+        "www.tumblr.com": {
+            "cookies": [
+                {
+                    "name": "pfp",
+                    "domain": "www.tumblr.com",
+                    "path": "/",
+                    "secure": false
+                }
+            ],
             "rate": 0.01
         }
     }
