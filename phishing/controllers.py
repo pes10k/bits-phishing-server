@@ -84,7 +84,7 @@ class CookieRules(tornado.web.RequestHandler):
             app_log.debug("Error writing checkin: {error}".format(error=error))
             rs = {"ok": False, "msg": error}
         else:
-            rs = {"ok": True, "msg": json_decode(rules)}
+            rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
         self.write(json_encode(rs))
         self.finish()
 
