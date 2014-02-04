@@ -25,6 +25,7 @@ class Register(tornado.web.RequestHandler):
     def get(self):
         browser = self.get_argument("browser", False)
         version = self.get_argument("version", False)
+        debug = self.get_argument("debug", False)
 
         if not version:
             self.write(json_encode({"ok": False, "msg": "missing extension version"}))
@@ -39,6 +40,7 @@ class Register(tornado.web.RequestHandler):
                 "created_on": datetime.now(),
                 "browser": browser,
                 "version": version,
+                "debug": debug,
                 "checkins": [],
                 "pws": []
             }
