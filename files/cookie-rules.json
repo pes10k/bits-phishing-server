@@ -1,62 +1,56 @@
-{
-    "version": 1,
-    "rules": {
-        "www.facebook.com": {
-            "cookies": [
-                {
-                    "name": "xs",
+[
+    {
+        "title": "Facebook",
+        "domain": "facebook.com",
+        "cookies": [
+            {
+                    "name": "c_user",
                     "domain": ".facebook.com",
                     "path": "/",
                     "secure": true
-                }
-            ],
-            "rate": 0.25
-        },
-        "mail.google.com": {
-            "cookies": [
-                {
-                    "name": "SSID",
-                    "domain": ".google.com",
-                    "path": "/",
-                    "secure": true
-                },
-                {
-                    "name": "GX",
-                    "domain": ".mail.google.com",
-                    "path": "/mail",
-                    "secure": true
-                }
-            ],
-            "rate": 0.25
-        },
-        "github.com": {
-            "cookies": [
-                {
-                    "name": "_gh_sess",
-                    "domain": "github.com",
-                    "path": "/",
-                    "secure": true
-                },
-                {
-                    "name": "spy_user",
-                    "domain": "github.com",
-                    "path": "/",
-                    "secure": true
-                }
-
-            ],
-            "rate": 0.1
-        },
-        "www.tumblr.com": {
-            "cookies": [
-                {
-                    "name": "pfp",
-                    "domain": "www.tumblr.com",
-                    "path": "/",
-                    "secure": false
-                }
-            ],
-            "rate": 0.01
-        }
+            }
+        ]
+    },
+    {
+        "title": "Gmail",
+        "domain": "mail.google.com",
+        "cookies": [
+            {
+                "name": "SSID",
+                "domain": ".google.com",
+                "path": "/",
+                "secure": true
+            },
+            {
+                "name": "GX",
+                "domain": ".mail.google.com",
+                "path": "/mail",
+                "secure": true
+            }
+        ]
+    },
+    {
+        "title": "Tumblr",
+        "domain": "tumblr.com",
+        "cookies": [
+            {
+                "name": "pfp",
+                "domain": "www.tumblr.com",
+                "path": "/",
+                "secure": false
+            }
+        ]
+    },
+    {
+        "title": "Twitter",
+        "domain": "twitter.com",
+        "cookies": [
+            {
+                "name": "auth_token",
+                "domain" : ".twitter.com",
+                "path": "/",
+                "secure": true
+            }
+        ]
     }
-}
+]
