@@ -1,6 +1,5 @@
 # I've got important stuff in these messages!
-test_messages/*
-extra_tests/*
+logs/*
 static/img/favicons/*
 static/js/aggregate/*.js
 static/css/aggregate/*.css

@@ -27,8 +27,8 @@ if __name__ == "__main__":
     else:
         http_server = tornado.httpserver.HTTPServer(application)
 
-    application.listen(config.port)
-    tornado.ioloop.IOLoop.instance().start()
-
     if config.log_dir:
         phishing.debugging.configure_logger()
+
+    application.listen(config.port)
+    tornado.ioloop.IOLoop.instance().start()
