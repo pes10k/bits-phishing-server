@@ -93,6 +93,8 @@ class PasswordEntered(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self):
         install_id = self.get_argument("id", False)
+        domain = self.get_argument("domain", False)
+        url = self.get_argument("url", False)
         if not install_id:
             error = "missing install id"
             self.write(json_encode({"ok": False, "msg": error}))
@@ -100,7 +102,11 @@ class PasswordEntered(tornado.web.RequestHandler):
         else:
             query = {"_id": install_id}
             update = {"$push": {
-                "pws": datetime.now()
+                "pws": {
+                    "date": datetime.now(),
+                    "domain": domain,
+                    "url": url
+               }
             }}
             db().update(query, update, callback=self._on_record)
 
