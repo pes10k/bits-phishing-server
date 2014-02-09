@@ -1,0 +1,110 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          $NAME
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: $NAME
+# Description:       Starts up the phishing recording server 
+### END INIT INFO
+
+# This is a simple, sample init style startup script for running the
+# phishing server as a standard start up process, with (relativly)
+# clean starting and stopping behavior, etc.
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
+# and status_of_proc is working.
+. /lib/lsb/init-functions
+
+
+NAME="phishing-server"
+ROOT_DIR="/var/www/bits-$NAME"
+DESC="Phishing Server"
+PID_FILE="/var/run/$NAME.pid"
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+    # If there is currently a pid file, it means it looks like there
+    # there is already a version of the server running, so stop right there
+    if [ -f "$PID_FILE" ]
+    then
+        echo "Looks like there is already a version of the server running (pid:`cat $PID_FILE`) so not starting new instance"
+        return 1
+    fi
+
+    # First, launch tornado as a less trusted user, to keep
+    # things more sane-o
+    sudo -u www-data python -O $ROOT_DIR/server.py > /dev/null &
+
+    # hack, but server doesn't start right away, so sleep for 2 seconds
+    # to let it start up so we can grab the pid.  Yuck...
+    sleep 2
+    
+    # now that we're started up grab the pid for the process we just
+    # started out of the logs
+    PID=`grep -Eo "pid:([0-9]+)" $ROOT_DIR/logs/gen_8080.log | sed 's/pid://g' | tail -n 1`
+    
+    # if we couldn't get a pid, then something wrong happenend, and stop right now
+    if [ -z "$PID" ]
+    then
+        echo "There was an error starting the server"
+        return 2
+    fi
+
+    # Now write the pid of the process to a place where we can get to it next time
+    echo $PID > /var/run/$NAME.pid 
+
+    return 0
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+    if [ ! -f "$PID_FILE" ]
+    then
+        echo "Could not find a running version of the phishing server to stop";
+        return 1;
+    fi
+
+    CUR_PID=`cat $PID_FILE`
+    kill $CUR_PID
+    if [ "$?" -ne "0" ]
+    then
+        echo "It doesn't seem like the server was shutdown correctly"
+        return 2
+    fi
+
+    # otherwise, if things look good, delete the pid file to
+    rm $PID_FILE
+    return 0
+}
+
+case "$1" in
+  restart)
+    [ "$VERBOSE" != no ] && log_daemon_msg "Restarting $DESC"
+    do_stop
+    do_start
+    ;;
+  start)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" 
+	do_start
+	;;
+  stop)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" 
+	do_stop
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop}" >&2
+	exit 3
+	;;
+esac
+
+:

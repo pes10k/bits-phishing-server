@@ -41,5 +41,5 @@ def configure_logger():
     gen_logger = logging.getLogger('tornado.general')
     gen_logger.setLevel(logging.DEBUG if config.debug else logging.WARNING)
     gen_logger.addHandler(gen_log_handler)
-    gen_logger.warning("drano started.")
+    gen_logger.warning("tornado started (pid:{0}).".format(os.getpid()))
     gen_logger.propagate = False
