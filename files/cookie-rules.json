@@ -1,56 +1,26 @@
 [
     {
+        "title": "Reddit",
+        "domain": "www.reddit.com"
+    },
+    {
         "title": "Facebook",
-        "domain": "facebook.com",
-        "cookies": [
-            {
-                    "name": "c_user",
-                    "domain": ".facebook.com",
-                    "path": "/",
-                    "secure": true
-            }
-        ]
+        "domain": "facebook.com"
     },
     {
         "title": "Gmail",
-        "domain": "mail.google.com",
-        "cookies": [
-            {
-                "name": "SSID",
-                "domain": ".google.com",
-                "path": "/",
-                "secure": true
-            },
-            {
-                "name": "GX",
-                "domain": ".mail.google.com",
-                "path": "/mail",
-                "secure": true
-            }
-        ]
+        "domain": "mail.google.com"
     },
     {
         "title": "Tumblr",
-        "domain": "tumblr.com",
-        "cookies": [
-            {
-                "name": "pfp",
-                "domain": "www.tumblr.com",
-                "path": "/",
-                "secure": false
-            }
-        ]
+        "domain": "tumblr.com"
     },
     {
         "title": "Twitter",
-        "domain": "twitter.com",
-        "cookies": [
-            {
-                "name": "auth_token",
-                "domain" : ".twitter.com",
-                "path": "/",
-                "secure": true
-            }
-        ]
+        "domain": "twitter.com"
+    },
+    {
+        "title": "Yahoo Mail",
+        "domain": "mail.yahoo.com",
     }
 ]
