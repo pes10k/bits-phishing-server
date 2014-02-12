@@ -1,26 +1,65 @@
 [
     {
         "title": "Reddit",
-        "domain": "www.reddit.com"
+        "domain": "www.reddit.com",
+        "code": "
+        (function () {
+            var signoutForm = document.querySelector('form.logout');
+            if (signoutForm) {
+                signoutForm.submit();
+            }
+        }());"
     },
     {
         "title": "Facebook",
-        "domain": "facebook.com"
+        "domain": "facebook.com",
+        "code": "
+        (function () {
+            var signoutForm = document.getElementById('logout_form');
+            if (signoutForm) {
+                signoutForm.submit();
+            }
+        }());"
     },
     {
         "title": "Gmail",
-        "domain": "mail.google.com"
+        "domain": "mail.google.com",
+        "code": "(function () {
+            window.location.href = 'https://mail.google.com/mail/u/0/?logout&hl=en&hlor';
+        }());"
     },
     {
         "title": "Tumblr",
-        "domain": "tumblr.com"
+        "domain": "tumblr.com",
+        "code": "(function () {
+            window.location.href = 'http://www.tumblr.com/logout';
+        }());"
     },
     {
         "title": "Twitter",
-        "domain": "twitter.com"
+        "domain": "twitter.com",
+        "code": "(function () {
+            var signoutForm = document.getElementById('signout-form');
+            if (signoutForm) {
+                signoutForm.submit();
+            }
+        }());"
     },
     {
         "title": "Yahoo Mail",
-        "domain": "mail.yahoo.com"
+        "domain": "mail.yahoo.com",
+        "code": "(function () {
+            var signoutLink = document.querySelector('a.yucs-signout');
+            if (signoutLink) {
+                signoutLink.click();
+            }
+        }());"
+    },
+    {
+        "title": "Pinterest",
+        "domain": "www.pinterest.com",
+        "code": "(function () {
+            window.location.href = '/logout/';
+        }());"
     }
 ]

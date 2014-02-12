@@ -18,7 +18,15 @@ def db(collection="installs"):
     return MONGO['client'][collection]
 
 
-class Register(tornado.web.RequestHandler):
+class PhishingRequestHandler(tornado.web.RequestHandler):
+
+    def _error_out(self, error):
+        app_log.info(u"{0}: {1}".format(type(self).__name__, error))
+        self.write(json_encode({"ok": False, "msg": error}))
+        self.finish()
+
+
+class Register(PhishingRequestHandler):
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine
@@ -28,95 +36,145 @@ class Register(tornado.web.RequestHandler):
         debug = self.get_argument("debug", False)
 
         if not version:
-            self.write(json_encode({"ok": False, "msg": "missing extension version"}))
-            self.finish()
-        elif not browser:
-            self.write(json_encode({"ok": False, "msg": "missing browser name"}))
-            self.finish()
+            self._error_out("missing extension version");
+            return
+
+        if not browser:
+            self._error_out("missing browser name")
+            return
+
+        record = {
+            "_id": uuid.uuid4().hex,
+            "group": "experiment" if random.choice((True, False)) else "control",
+            "created_on": datetime.now(),
+            "browser": browser,
+            "version": version,
+            "debug": debug,
+            "checkins": [],
+            "pws": [],
+            "reauths": []
+        }
+        result, error_rs = yield tornado.gen.Task(db().insert, record)
+        response = {"ok": not error_rs['error']}
+        if error_rs['error']:
+            app_log.info("Error writing registration: {error}".format(error=error_rs['error']))
+            response['msg'] = "ID already registered"
         else:
-            record = {
-                "_id": uuid.uuid4().hex,
-                "group": "experiment" if random.choice((True, False)) else "control",
-                "created_on": datetime.now(),
-                "browser": browser,
-                "version": version,
-                "debug": debug,
-                "checkins": [],
-                "pws": []
-            }
-            result, error_rs = yield tornado.gen.Task(db().insert, record)
-            response = {"ok": not error_rs['error']}
-            if error_rs['error']:
-                app_log.debug("Error writing registration: {error}".format(error=error_rs['error']))
-                response['msg'] = "ID already registered"
-            else:
-                response['msg'] = "registered"
-                response['group'] = record['group']
-                response['_id'] = record['_id']
-                response['created_on'] = record['created_on'].isoformat()
-            self.write(json_encode(response))
-            self.finish()
+            response['msg'] = "registered"
+            response['group'] = record['group']
+            response['_id'] = record['_id']
+            response['created_on'] = record['created_on'].isoformat()
+        self.write(json_encode(response))
+        self.finish()
 
 
-class CookieRules(tornado.web.RequestHandler):
+class CookieRules(PhishingRequestHandler):
 
     @tornado.web.asynchronous
     def get(self):
         install_id = self.get_argument("id", False)
         if not install_id:
-            self.write(json_encode({"ok": False, "msg": "missing install id"}))
-            self.finish()
-        else:
-            handle = open(COOKIE_RULES_PATH, 'r')
-            rules = handle.read()
-            handle.close()
-            cb = lambda result, error: self._on_record(rules, result, error)
-            query = {"_id": install_id}
-            update = {"$push": {
-                "checkins": datetime.now()
-            }}
-            db().update(query, update, callback=cb)
+            self._error_out("missing install id")
+            return
+
+        handle = open(COOKIE_RULES_PATH, 'r')
+        rules = handle.read()
+        handle.close()
+        cb = lambda result, error: self._on_record(rules, result, error)
+        query = {"_id": install_id}
+        update = {"$push": {
+            "checkins": datetime.now()
+        }}
+        db().update(query, update, callback=cb)
 
     # First record the checkin, then read the latest cookie list and send
     # it back over the wire
     def _on_record(self, rules, result, error):
         if error:
-            app_log.debug("Error writing checkin: {error}".format(error=error))
-            rs = {"ok": False, "msg": error}
-        else:
-            rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
+            self._error_out("Error writing checkin: {error}".format(error=error))
+            return
+
+        rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
         self.write(json_encode(rs))
         self.finish()
 
-class PasswordEntered(tornado.web.RequestHandler):
+
+class Reauth(PhishingRequestHandler):
+
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
+    def get(self):
+
+        install_id = self.get_argument("id", False)
+        domain = self.get_argument("domain", False)
+        if not install_id:
+            self._error_out("missing install id")
+            return
+
+        if not domain:
+            self._error_out("missing domain")
+            return
+
+        query = {"_id": install_id}
+        update = {"$push": {
+            "reauths": {
+                "date": datetime.now(),
+                "domain": domain
+           }
+        }}
+        db().update(query, update, callback=self._on_record)
+
+    def _on_record(self, result, error):
+        if error:
+            self._error_out("Error recording password: {error}".format(error=error))
+            return
+        self.write(json_encode({"ok": True}))
+        self.finish()
+
+
+class PasswordEntered(PhishingRequestHandler):
 
     @tornado.web.asynchronous
     def get(self):
         install_id = self.get_argument("id", False)
         domain = self.get_argument("domain", False)
         url = self.get_argument("url", False)
+        pw_hash = self.get_argument("pw_hash", False)
+        pw_strength = self.get_argument("pw_strength", False)
+
         if not install_id:
-            error = "missing install id"
-            self.write(json_encode({"ok": False, "msg": error}))
-            self.finish()
-        else:
-            query = {"_id": install_id}
-            update = {"$push": {
-                "pws": {
-                    "date": datetime.now(),
-                    "domain": domain,
-                    "url": url
-               }
-            }}
-            db().update(query, update, callback=self._on_record)
+            self._error_out("missing install id")
+            return
+
+        if not pw_hash:
+            self._error_out("missing password hash")
+            return
+
+        if not pw_strength:
+            self._error_out("missing password strength")
+            return
+
+        query = {"_id": install_id}
+        update = {"$push": {
+            "pws": {
+                "date": datetime.now(),
+                "domain": domain,
+                "url": url,
+                "hash": pw_hash,
+                "strength": pw_strength
+           }
+        }}
+        db().update(query, update, callback=self._on_record)
 
     def _on_record(self, result, error):
         if error:
-            app_log.debug("Error recording password: {error}".format(error=error))
+            self._error_out("Error recording password: {error}".format(error=error))
+            return
+
         self.write(json_encode({"ok": True}))
         self.finish()
 
-class EmailUpdate(tornado.web.RequestHandler):
+class EmailUpdate(PhishingRequestHandler):
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine
@@ -155,10 +213,11 @@ class EmailUpdate(tornado.web.RequestHandler):
             error_msg = error['error']
 
         if error_msg:
-            app_log.debug("Error recording password: {error}".format(error=error_msg))
+            self._error_out("Error recording password: {error}".format(error=error_msg))
+            return
 
         self.write(json_encode({
-            "ok": not error_msg,
+            "ok": True,
             "error": error_msg
         }))
         self.finish()
