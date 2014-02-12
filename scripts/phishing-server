@@ -19,11 +19,12 @@
 # and status_of_proc is working.
 . /lib/lsb/init-functions
 
-
+PORT=8070
 NAME="phishing-server"
 ROOT_DIR="/var/www/bits-$NAME"
 DESC="Phishing Server"
 PID_FILE="/var/run/$NAME.pid"
+TORNADO_USER=tornado
 
 #
 # Function that starts the daemon/service
@@ -40,7 +41,7 @@ do_start()
 
     # First, launch tornado as a less trusted user, to keep
     # things more sane-o
-    sudo -u www-data python -O $ROOT_DIR/server.py > /dev/null &
+    sudo -u $TORNADO_USER python -O $ROOT_DIR/server.py & > /dev/null
 
     # hack, but server doesn't start right away, so sleep for 2 seconds
     # to let it start up so we can grab the pid.  Yuck...
@@ -48,7 +49,7 @@ do_start()
     
     # now that we're started up grab the pid for the process we just
     # started out of the logs
-    PID=`grep -Eo "pid:([0-9]+)" $ROOT_DIR/logs/gen_8080.log | sed 's/pid://g' | tail -n 1`
+    PID=`grep -Eo "pid:([0-9]+)" $ROOT_DIR/logs/gen_$PORT.log | sed 's/pid://g' | tail -n 1`
     
     # if we couldn't get a pid, then something wrong happenend, and stop right now
     if [ -z "$PID" ]
