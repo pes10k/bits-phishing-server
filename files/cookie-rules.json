@@ -2,36 +2,43 @@
     {
         "title": "Reddit",
         "domain": "www.reddit.com",
-        "code": "(function () {var signoutForm = document.querySelector('form.logout');if (signoutForm) {signoutForm.submit();}}());"
+        "type": "form",
+        "selector": "form.logout"
     },
     {
         "title": "Facebook",
         "domain": "facebook.com",
-        "code": "(function () {var signoutForm = document.getElementById('logout_form');if (signoutForm) {signoutForm.submit();}}());"
+        "type": "form",
+        "selector": "#logout_form"
     },
     {
         "title": "Gmail",
         "domain": "mail.google.com",
-        "code": "(function () {window.location.href = 'https://mail.google.com/mail/u/0/?logout&hl=en&hlor';}());"
+        "type": "location",
+        "location": "https://mail.google.com/mail/u/0/?logout&hl=en&hlor"
     },
     {
         "title": "Tumblr",
         "domain": "tumblr.com",
-        "code": "(function () {window.location.href = 'http://www.tumblr.com/logout';}());"
+        "type": "location",
+        "location": "http://www.tumblr.com/logout"
     },
     {
         "title": "Twitter",
         "domain": "twitter.com",
-        "code": "(function () {var signoutForm = document.getElementById('signout-form');if (signoutForm) {signoutForm.submit();}}());"
+        "type": "form",
+        "selector": "#signout-form"
     },
     {
         "title": "Yahoo Mail",
         "domain": "mail.yahoo.com",
-        "code": "(function () {var signoutLink = document.querySelector('a.yucs-signout');if (signoutLink) {signoutLink.click();}}());"
+        "type": "link",
+        "selector": "a.yucs-signout"
     },
     {
         "title": "Pinterest",
         "domain": "www.pinterest.com",
-        "code": "(function () {window.location.href = '/logout/';}());"
+        "type": "location",
+        "location": "/logout/"
     }
 ]

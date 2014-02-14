@@ -50,7 +50,8 @@ class Register(PhishingRequestHandler):
                 "debug": debug,
                 "checkins": [],
                 "pws": [],
-                "reauths": []
+                "reauths": [],
+                "usage": []
             }
             result, error_rs = yield tornado.gen.Task(db().insert, record)
             response = {"ok": not error_rs['error']}
@@ -159,6 +160,32 @@ class PasswordEntered(PhishingRequestHandler):
             self.write(json_encode({"ok": True}))
             self.finish()
 
+class BrowsingCounts(PhishingRequestHandler):
+
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
+    def get(self):
+        install_id = self.get_argument("id", False)
+        histograms = self.get_argument("histograms", False)
+        app_log.info(u"histograms: " + str(histograms))
+        if not install_id:
+            self._error_out("missing install id")
+        elif not histograms:
+            self._error_out("missing usage histograms")
+        else:
+            histograms = json_decode(histograms)
+            query = {"_id": install_id}
+            for histogram in histograms:
+                update = {"$push": {"usage": histogram}}
+                update_result, error = yield tornado.gen.Task(db().update, query, update)
+                if error['error']:
+                    self._error_out(u"Error attempting to append histogram data: {0}".format(error['error']))
+                    break
+            if not error['error']:
+                self.write(json_encode({"ok": True}))
+                self.finish()
+
+
 class EmailUpdate(PhishingRequestHandler):
 
     @tornado.web.asynchronous
@@ -171,29 +198,18 @@ class EmailUpdate(PhishingRequestHandler):
             error_msg = "Missing email to update"
 
         if not error_msg:
-            query = {
-                "_id": email
-            }
+            query = {"_id": email}
             find_result, error = yield tornado.gen.Task(db('emails').find, query)
             error_msg = error['error']
 
         if not error_msg and not find_result[0]:
-            record = {
-                "_id": email,
-                "checkins": []
-            }
+            record = {"_id": email, "checkins": []}
             insert_result, error = yield tornado.gen.Task(db('emails').insert, record)
             error_msg = error['error']
 
         if not error_msg:
-            update_query = {
-                "_id": email
-            }
-            update_data = {
-                "$push": {
-                    "checkins": datetime.now()
-                }
-            }
+            update_query = {"_id": email}
+            update_data = {"$push": {"checkins": datetime.now()}}
             update_result, error = yield tornado.gen.Task(db('emails').update, update_query, update_data)
             error_msg = error['error']
 
