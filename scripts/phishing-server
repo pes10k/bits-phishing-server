@@ -60,7 +60,7 @@ do_start()
 
     # Now write the pid of the process to a place where we can get to it next time
     echo $PID > /var/run/$NAME.pid 
-
+    echo "Successfully started $DESC"
     return 0
 }
 
@@ -85,6 +85,7 @@ do_stop()
 
     # otherwise, if things look good, delete the pid file to
     rm $PID_FILE
+    echo "Successfully stopped $DESC"
     return 0
 }
 
