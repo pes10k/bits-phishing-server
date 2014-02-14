@@ -22,7 +22,7 @@ class PhishingRequestHandler(tornado.web.RequestHandler):
 
     @tornado.web.asynchronous
     def _error_out(self, error):
-        app_log.info(u"{0}: {1}".format(type(self).__name__, error))
+        app_log.error(u"{0}: {1}".format(type(self).__name__, error))
         self.write(json_encode({"ok": False, "msg": error}))
         self.finish()
 
@@ -70,6 +70,7 @@ class Register(PhishingRequestHandler):
 class CookieRules(PhishingRequestHandler):
 
     @tornado.web.asynchronous
+    @tornado.gen.coroutine
     def get(self):
         install_id = self.get_argument("id", False)
         if not install_id:
@@ -78,22 +79,15 @@ class CookieRules(PhishingRequestHandler):
             handle = open(COOKIE_RULES_PATH, 'r')
             rules = handle.read()
             handle.close()
-            cb = lambda result, error: self._on_record(rules, result, error)
             query = {"_id": install_id}
-            update = {"$push": {
-                "checkins": datetime.now()
-            }}
-            db().update(query, update, callback=cb)
-
-    # First record the checkin, then read the latest cookie list and send
-    # it back over the wire
-    def _on_record(self, rules, result, error):
-        if error:
-            self._error_out("Error writing checkin: {error}".format(error=error))
-        else:
-            rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
-            self.write(json_encode(rs))
-            self.finish()
+            update = {"$push": {"checkins": datetime.now()}}
+            update_result, error = yield tornado.gen.Task(db().update, query, update)
+            if error['error']:
+                self._error_out(u"Error writing checkin: {0}".format(error['error']))
+            else:
+                rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
+                self.write(json_encode(rs))
+                self.finish()
 
 
 class Reauth(PhishingRequestHandler):
