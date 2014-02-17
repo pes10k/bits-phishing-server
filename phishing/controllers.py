@@ -4,7 +4,6 @@ import tornado.web
 import asyncmongo
 import uuid
 import tornado.gen
-import random
 from tornado.log import app_log
 from tornado.escape import json_encode, json_decode
 from datetime import datetime
@@ -17,6 +16,17 @@ def db(collection="installs"):
         MONGO['client'] = asyncmongo.Client(**config.mongo)
     return MONGO['client'][collection]
 
+def assign_group():
+    next_group = None
+    if not assign_group._last_group or assign_group._last_group == "control":
+        next_group = "reauth"
+    elif assign_group._last_group == "reauth":
+        next_group = "autofill"
+    else:
+        next_group = "control"
+    assign_group._last_group = next_group
+    return next_group
+assign_group._last_group = None
 
 class PhishingRequestHandler(tornado.web.RequestHandler):
 
@@ -24,6 +34,14 @@ class PhishingRequestHandler(tornado.web.RequestHandler):
     def _error_out(self, error):
         app_log.error(u"{0}: {1}".format(type(self).__name__, error))
         self.write(json_encode({"ok": False, "msg": error}))
+        self.finish()
+
+    @tornado.web.asynchronous
+    def _ok_out(self, params=None):
+        if not params:
+            params = {}
+        params["ok"] = True
+        self.write(json_encode(params))
         self.finish()
 
 
@@ -43,7 +61,7 @@ class Register(PhishingRequestHandler):
         else:
             record = {
                 "_id": uuid.uuid4().hex,
-                "group": "experiment" if random.choice((True, False)) else "control",
+                "group": assign_group(),
                 "created_on": datetime.now(),
                 "browser": browser,
                 "version": version,
@@ -51,7 +69,8 @@ class Register(PhishingRequestHandler):
                 "checkins": [],
                 "pws": [],
                 "reauths": [],
-                "usage": []
+                "usage": [],
+                "autofills": []
             }
             result, error_rs = yield tornado.gen.Task(db().insert, record)
             response = {"ok": not error_rs['error']}
@@ -85,10 +104,7 @@ class CookieRules(PhishingRequestHandler):
             if error['error']:
                 self._error_out(u"Error writing checkin: {0}".format(error['error']))
             else:
-                rs = {"ok": True, "msg": json_decode(rules), "active": config.active}
-                self.write(json_encode(rs))
-                self.finish()
-
+                self._ok_out({"msg": json_decode(rules), "active": config.active})
 
 class Reauth(PhishingRequestHandler):
 
@@ -114,8 +130,37 @@ class Reauth(PhishingRequestHandler):
         if error:
             self._error_out("Error recording password: {error}".format(error=error))
         else:
-            self.write(json_encode({"ok": True}))
-            self.finish()
+            self._ok_out()
+
+
+class PasswordAutofill(PhishingRequestHandler):
+
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
+    def get(self):
+        install_id = self.get_argument("id", False)
+        domain = self.get_argument("domain", False)
+        url = self.get_argument("url", False)
+        if not install_id:
+            self._error_out("missing install id")
+        elif not domain:
+            self._error_out("missing domain")
+        elif not url:
+            self._error_out("missing url")
+        else:
+            query = {"_id": install_id}
+            update = {"$push": {
+                "autofills": {
+                    "date": datetime.now(),
+                    "domain": domain,
+                    "url": url
+               }
+            }}
+            update_result, error = yield tornado.gen.Task(db().update, query, update)
+            if error['error']:
+                self._error_out(u"Error writing autofill: {0}".format(error['error']))
+            else:
+                self._ok_out()
 
 
 class PasswordEntered(PhishingRequestHandler):
@@ -151,8 +196,7 @@ class PasswordEntered(PhishingRequestHandler):
         if error:
             self._error_out("Error recording password: {error}".format(error=error))
         else:
-            self.write(json_encode({"ok": True}))
-            self.finish()
+            self._ok_out()
 
 class BrowsingCounts(PhishingRequestHandler):
 
@@ -176,8 +220,7 @@ class BrowsingCounts(PhishingRequestHandler):
                     self._error_out(u"Error attempting to append histogram data: {0}".format(error['error']))
                     break
             if not error['error']:
-                self.write(json_encode({"ok": True}))
-                self.finish()
+                self._ok_out()
 
 
 class EmailUpdate(PhishingRequestHandler):
@@ -210,8 +253,4 @@ class EmailUpdate(PhishingRequestHandler):
         if error_msg:
             self._error_out("Error recording password: {error}".format(error=error_msg))
         else:
-            self.write(json_encode({
-                "ok": True,
-                "error": error_msg
-            }))
-            self.finish()
+            self._ok_out({"error": error_msg})

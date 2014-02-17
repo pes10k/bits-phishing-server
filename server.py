@@ -17,7 +17,8 @@ routes = [
     (r"/password-entered", controllers.PasswordEntered),
     (r"/email", controllers.EmailUpdate),
     (r"/record-reauth", controllers.Reauth),
-    (r"/browsing-counts", controllers.BrowsingCounts)
+    (r"/browsing-counts", controllers.BrowsingCounts),
+    (r"/password-autofilled", controllers.PasswordAutofill)
 ]
 
 application = tornado.web.Application(routes, **settings)
