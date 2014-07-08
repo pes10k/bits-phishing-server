@@ -2,43 +2,36 @@
     {
         "title": "Reddit",
         "domain": "www.reddit.com",
-        "type": "form",
-        "selector": "form.logout"
+        "cookies": ["reddit_session"]
     },
     {
         "title": "Facebook",
         "domain": "facebook.com",
-        "type": "form",
-        "selector": "#logout_form"
+        "cookies": ["c_user"]
     },
     {
         "title": "Gmail",
         "domain": "mail.google.com",
-        "type": "location",
-        "location": "https://mail.google.com/mail/u/0/?logout&hl=en&hlor"
+        "cookies": []
     },
     {
         "title": "Tumblr",
         "domain": "tumblr.com",
-        "type": "location",
-        "location": "http://www.tumblr.com/logout"
+        "cookies": ["pfp"]
     },
     {
         "title": "Twitter",
         "domain": "twitter.com",
-        "type": "form",
-        "selector": "#signout-form"
+        "cookies": ["auth_token"]
     },
     {
         "title": "Yahoo Mail",
         "domain": "mail.yahoo.com",
-        "type": "link",
-        "selector": "a.yucs-signout"
+        "cookies": ["SSL"]
     },
     {
         "title": "Pinterest",
         "domain": "www.pinterest.com",
-        "type": "location",
-        "location": "/logout/"
+        "cookies": ["_b", "_pinterest_sess"]
     }
 ]
