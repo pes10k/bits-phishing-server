@@ -12,7 +12,7 @@
     {
         "title": "Gmail",
         "domain": "mail.google.com",
-        "cookies": []
+        "cookies": ["GX", "SSID"]
     },
     {
         "title": "Tumblr",
