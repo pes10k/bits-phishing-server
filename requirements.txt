@@ -1,2 +1,2 @@
-tornado
-asyncmongo
+tornado==4.0.2
+asyncmongo==1.3

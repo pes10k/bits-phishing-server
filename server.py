@@ -21,6 +21,9 @@ routes = [
     (r"/password-autofilled", controllers.PasswordAutofill)
 ]
 
+if config.debug:
+    routes.append((r"/cookie-set", controllers.CookieSetTest))
+
 application = tornado.web.Application(routes, **settings)
 
 if __name__ == "__main__":

@@ -8,6 +8,10 @@ from tornado.log import app_log
 from tornado.escape import json_encode, json_decode
 from datetime import datetime
 
+# Modules only used when debugging
+import time
+import math
+
 MONGO = {'client': None}
 COOKIE_RULES_PATH = os.path.join(config.root_dir, "files", "cookie-rules.json")
 
@@ -254,3 +258,22 @@ class EmailUpdate(PhishingRequestHandler):
             self._error_out("Error recording password: {error}".format(error=error_msg))
         else:
             self._ok_out({"error": error_msg})
+
+
+class CookieSetTest(PhishingRequestHandler):
+    """Simple test class that sets two cookies, `test_long` and `test_short`
+    on the requester.  This controller is only accessible when the server is
+    in debug mode.
+
+    Both cookies will have the same expiration time, but the
+    other end of the test, the browser plugin, will set the short one
+    to have a shorter expiration time.
+    """
+
+    def get(self):
+        # Set the expiration date by default to be 1 year from now
+        expiraton_time = math.floor(time.time()) + 31536000
+        self.set_cookie('test_short', 'short_value', expires=expiraton_time)
+        self.set_cookie('test_long', 'short_long', expires=expiraton_time)
+        self.write("Successfully wrote two test cookies.")
+        self.finish()

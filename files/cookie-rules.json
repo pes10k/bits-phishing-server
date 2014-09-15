@@ -33,5 +33,10 @@
         "title": "Pinterest",
         "domain": "www.pinterest.com",
         "cookies": ["_b", "_pinterest_sess"]
+    },
+    {
+        "title": "UIC Checks",
+        "domain": "drano-dev.uicbits.net",
+        "cookies": ["test_short"]
     }
 ]
