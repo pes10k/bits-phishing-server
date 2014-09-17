@@ -1,42 +1,66 @@
 [
     {
         "title": "Reddit",
-        "domain": "www.reddit.com",
-        "cookies": ["reddit_session"]
+        "domain": ".reddit.com",
+        "cookies": [
+            ["reddit_session", "/", true]
+        ]
     },
     {
         "title": "Facebook",
-        "domain": "facebook.com",
-        "cookies": ["c_user"]
+        "domain": ".facebook.com",
+        "cookies": [
+            ["c_user", "/", true]
+        ]
+    },
+    {
+        "title": "Google Session Cookie",
+        "domain": ".google.com",
+        "cookies": [
+            ["SSID", "/", true]
+        ]
     },
     {
         "title": "Gmail",
-        "domain": "mail.google.com",
-        "cookies": ["GX", "SSID"]
+        "domain": ".mail.google.com",
+        "cookies": [
+            ["GX", "/mail", true]
+        ]
     },
     {
         "title": "Tumblr",
-        "domain": "tumblr.com",
-        "cookies": ["pfp"]
+        "domain": "www.tumblr.com",
+        "cookies": [
+            ["pfp", "/", false]
+        ]
     },
     {
         "title": "Twitter",
-        "domain": "twitter.com",
-        "cookies": ["auth_token"]
+        "domain": ".twitter.com",
+        "cookies": [
+            ["auth_token", "/", true]
+        ]
     },
     {
         "title": "Yahoo Mail",
-        "domain": "mail.yahoo.com",
-        "cookies": ["SSL"]
+        "domain": ".yahoo.com",
+        "cookies": [
+            ["SSL", "/", true]
+        ]
     },
     {
         "title": "Pinterest",
-        "domain": "www.pinterest.com",
-        "cookies": ["_b", "_pinterest_sess"]
+        "domain": ".pinterest.com",
+        "cookies": [
+            ["_b", "/", false],
+            ["_pinterest_sess", "/", false]
+        ]
     },
     {
         "title": "UIC Checks",
         "domain": "drano-dev.uicbits.net",
-        "cookies": ["test_short"]
+        "cookies": [
+            ["test_short", "/", false]
+        ]
     }
 ]
