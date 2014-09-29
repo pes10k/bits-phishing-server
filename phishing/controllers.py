@@ -264,7 +264,7 @@ class EmailUpdate(PhishingRequestHandler):
             update_query = {"_id": email}
             update_data = {"$push": {"checkins": datetime.now()}}
             try:
-                yield db.emails.update_result(update_query, update_data)
+                yield db.emails.update(update_query, update_data)
             except Exception, e:
                 error_msg = str(e)
 
