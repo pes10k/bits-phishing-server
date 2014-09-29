@@ -64,7 +64,6 @@ class Register(PhishingRequestHandler):
                 "debug": debug,
                 "checkins": [],
                 "pws": [],
-                "reauths": [],
                 "usage": [],
                 "autofills": []
             }
