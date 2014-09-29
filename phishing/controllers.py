@@ -113,33 +113,6 @@ class CookieRules(PhishingRequestHandler):
 
             self._ok_out({"msg": json_decode(rules), "active": config.active})
 
-class Reauth(PhishingRequestHandler):
-
-    @tornado.web.asynchronous
-    @tornado.gen.coroutine
-    def get(self):
-        install_id = self.get_argument("id", False)
-        domain = self.get_argument("domain", False)
-        if not install_id:
-            self._error_out("missing install id")
-        elif not domain:
-            self._error_out("missing domain")
-        else:
-            query = {"_id": install_id}
-            update = {"$push": {
-                "reauths": {
-                    "date": datetime.now(),
-                    "domain": domain
-               }
-            }}
-
-            db = self.settings['db']
-            try:
-                yield db.installs.update(query, update)
-            except Exception, e:
-                self._error_out("Error recording password: {error}".format(error=str(e)))
-            self._ok_out()
-
 
 class PasswordAutofill(PhishingRequestHandler):
 

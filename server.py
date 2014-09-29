@@ -18,7 +18,6 @@ routes = [
     (r"/cookie-rules", controllers.CookieRules),
     (r"/password-entered", controllers.PasswordEntered),
     (r"/email", controllers.EmailUpdate),
-    (r"/record-reauth", controllers.Reauth),
     (r"/browsing-counts", controllers.BrowsingCounts),
     (r"/password-autofilled", controllers.PasswordAutofill)
 ]
