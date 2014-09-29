@@ -72,7 +72,7 @@ class Register(PhishingRequestHandler):
             response = {}
 
             try:
-                response = yield db.installs.insert(record)
+                yield db.installs.insert(record)
                 is_error = False
             except Exception, e:
                 is_error = True
