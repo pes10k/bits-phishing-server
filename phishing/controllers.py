@@ -249,7 +249,7 @@ class EmailUpdate(PhishingRequestHandler):
         if not error_msg:
             query = {"_id": email}
             try:
-                msg = yield db.messages.find_one(query)
+                msg = yield db.emails.find_one(query)
             except Exception, e:
                 error_msg = str(e)
 
