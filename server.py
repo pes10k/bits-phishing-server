@@ -2,11 +2,13 @@ import os
 import config
 import tornado.ioloop
 import tornado.httpserver
+import motor
 import phishing.controllers as controllers
 import phishing.debugging
 
 
 settings = {
+    "db": motor.MotorClient(**config.mongo_params)[config.mongo_database],
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
     "debug": config.debug,
 }

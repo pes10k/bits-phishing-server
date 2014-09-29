@@ -1,7 +1,6 @@
 import os
 import config
 import tornado.web
-import asyncmongo
 import uuid
 import tornado.gen
 from tornado.log import app_log
@@ -14,11 +13,6 @@ import math
 
 MONGO = {'client': None}
 COOKIE_RULES_PATH = os.path.join(config.root_dir, "files", "cookie-rules.json")
-
-def db(collection="installs"):
-    if not MONGO['client']:
-        MONGO['client'] = asyncmongo.Client(**config.mongo)
-    return MONGO['client'][collection]
 
 def assign_group():
     next_group = None
@@ -34,13 +28,11 @@ assign_group._last_group = None
 
 class PhishingRequestHandler(tornado.web.RequestHandler):
 
-    @tornado.web.asynchronous
     def _error_out(self, error):
         app_log.error(u"{0}: {1}".format(type(self).__name__, error))
         self.write(json_encode({"ok": False, "msg": error}))
         self.finish()
 
-    @tornado.web.asynchronous
     def _ok_out(self, params=None):
         if not params:
             params = {}
@@ -76,12 +68,20 @@ class Register(PhishingRequestHandler):
                 "usage": [],
                 "autofills": []
             }
-            result, error_rs = yield tornado.gen.Task(db().insert, record)
-            response = {"ok": not error_rs['error']}
-            if error_rs['error']:
-                app_log.info("Error writing registration: {error}".format(error=error_rs['error']))
+            db = self.settings['db']
+            response = {}
+
+            try:
+                response = yield db.installs.insert(record)
+                is_error = False
+            except Exception, e:
+                is_error = True
+                app_log.info("Error writing registration: {error}".format(error=str(e)))
                 response['msg'] = "ID already registered"
-            else:
+
+            response['ok'] = not is_error
+
+            if not is_error:
                 response['msg'] = "registered"
                 response['group'] = record['group']
                 response['_id'] = record['_id']
@@ -104,15 +104,19 @@ class CookieRules(PhishingRequestHandler):
             handle.close()
             query = {"_id": install_id}
             update = {"$push": {"checkins": datetime.now()}}
-            update_result, error = yield tornado.gen.Task(db().update, query, update)
-            if error['error']:
-                self._error_out(u"Error writing checkin: {0}".format(error['error']))
-            else:
-                self._ok_out({"msg": json_decode(rules), "active": config.active})
+
+            db = self.settings['db']
+            try:
+                yield db.installs.update(query, update)
+            except Exception, e:
+                self._error_out(u"Error writing checkin: {0}".format(str(e)))
+
+            self._ok_out({"msg": json_decode(rules), "active": config.active})
 
 class Reauth(PhishingRequestHandler):
 
     @tornado.web.asynchronous
+    @tornado.gen.coroutine
     def get(self):
         install_id = self.get_argument("id", False)
         domain = self.get_argument("domain", False)
@@ -128,12 +132,12 @@ class Reauth(PhishingRequestHandler):
                     "domain": domain
                }
             }}
-            db().update(query, update, callback=self._on_record)
 
-    def _on_record(self, result, error):
-        if error:
-            self._error_out("Error recording password: {error}".format(error=error))
-        else:
+            db = self.settings['db']
+            try:
+                yield db.installs.update(query, update)
+            except Exception, e:
+                self._error_out("Error recording password: {error}".format(error=str(e)))
             self._ok_out()
 
 
@@ -160,16 +164,18 @@ class PasswordAutofill(PhishingRequestHandler):
                     "url": url
                }
             }}
-            update_result, error = yield tornado.gen.Task(db().update, query, update)
-            if error['error']:
-                self._error_out(u"Error writing autofill: {0}".format(error['error']))
-            else:
-                self._ok_out()
 
+            db = self.settings['db']
+            try:
+                yield db.installs.update(query, update)
+            except Exception, e:
+                self._error_out(u"Error writing autofill: {0}".format(str(e)))
+            self._ok_out()
 
 class PasswordEntered(PhishingRequestHandler):
 
     @tornado.web.asynchronous
+    @tornado.gen.coroutine
     def get(self):
         install_id = self.get_argument("id", False)
         domain = self.get_argument("domain", False)
@@ -194,12 +200,11 @@ class PasswordEntered(PhishingRequestHandler):
                     "strength": pw_strength
                }
             }}
-            db().update(query, update, callback=self._on_record)
-
-    def _on_record(self, result, error):
-        if error:
-            self._error_out("Error recording password: {error}".format(error=error))
-        else:
+            db = self.settings['db']
+            try:
+                yield db.installs.update(query, update)
+            except Exception, e:
+                self._error_out("Error recording password: {error}".format(error=str(e)))
             self._ok_out()
 
 class BrowsingCounts(PhishingRequestHandler):
@@ -217,14 +222,15 @@ class BrowsingCounts(PhishingRequestHandler):
         else:
             histograms = json_decode(histograms)
             query = {"_id": install_id}
+            db = self.settings['db']
             for histogram in histograms:
                 update = {"$push": {"usage": histogram}}
-                update_result, error = yield tornado.gen.Task(db().update, query, update)
-                if error['error']:
-                    self._error_out(u"Error attempting to append histogram data: {0}".format(error['error']))
-                    break
-            if not error['error']:
-                self._ok_out()
+                try:
+                    db.installs.update(query, update)
+                except Exception, e:
+                    self._error_out(u"Error attempting to append histogram data: {0}".format(str(e)))
+                    return
+            self._ok_out()
 
 
 class EmailUpdate(PhishingRequestHandler):
@@ -235,24 +241,32 @@ class EmailUpdate(PhishingRequestHandler):
         email = self.get_argument('email', False)
         error_msg = None
 
+        db = self.settings['db']
+
         if not email:
             error_msg = "Missing email to update"
 
         if not error_msg:
             query = {"_id": email}
-            find_result, error = yield tornado.gen.Task(db('emails').find, query)
-            error_msg = error['error']
+            try:
+                msg = yield db.messages.find_one(query)
+            except Exception, e:
+                error_msg = str(e)
 
-        if not error_msg and not find_result[0]:
+        if not error_msg and not msg:
             record = {"_id": email, "checkins": []}
-            insert_result, error = yield tornado.gen.Task(db('emails').insert, record)
-            error_msg = error['error']
+            try:
+                yield db.emails.insert(record)
+            except Exception, e:
+                error_msg = str(e)
 
         if not error_msg:
             update_query = {"_id": email}
             update_data = {"$push": {"checkins": datetime.now()}}
-            update_result, error = yield tornado.gen.Task(db('emails').update, update_query, update_data)
-            error_msg = error['error']
+            try:
+                yield db.emails.update_result(update_query, update_data)
+            except Exception, e:
+                error_msg = str(e)
 
         if error_msg:
             self._error_out("Error recording password: {error}".format(error=error_msg))
