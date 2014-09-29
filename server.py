@@ -29,13 +29,13 @@ application = tornado.web.Application(routes, **settings)
 
 if __name__ == "__main__":
     if config.ssl_options:
-        http_server = tornado.httpserver.HTTPServer(
+        server = tornado.httpserver.HTTPServer(
             application, ssl_options=config.ssl_options)
     else:
-        http_server = tornado.httpserver.HTTPServer(application)
+        server = tornado.httpserver.HTTPServer(application)
 
     if config.log_dir:
         phishing.debugging.configure_logger()
 
-    application.listen(config.port)
+    server.listen(config.port)
     tornado.ioloop.IOLoop.instance().start()
