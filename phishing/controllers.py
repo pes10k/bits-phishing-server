@@ -91,14 +91,24 @@ class CookieRules(PhishingRequestHandler):
     @tornado.gen.coroutine
     def get(self):
         install_id = self.get_argument("id", False)
+        version = self.get_argument("version", False)
         if not install_id:
             self._error_out("missing install id")
+        elif not version:
+            self._error_out("missing version")
         else:
             handle = open(COOKIE_RULES_PATH, 'r')
             rules = handle.read()
             handle.close()
             query = {"_id": install_id}
-            update = {"$push": {"checkins": datetime.now()}}
+            update = {
+                "$push": {
+                    "checkins": {
+                        "time": datetime.now(),
+                        "version": version
+                    }
+                }
+            }
 
             db = self.settings['db']
             try:
