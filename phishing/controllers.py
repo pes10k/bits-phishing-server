@@ -47,12 +47,9 @@ class Register(PhishingRequestHandler):
     @tornado.gen.coroutine
     def get(self):
         browser = self.get_argument("browser", False)
-        version = self.get_argument("version", False)
         debug = self.get_argument("debug", False)
 
-        if not version:
-            self._error_out("missing extension version");
-        elif not browser:
+        if not browser:
             self._error_out("missing browser name")
         else:
             record = {
@@ -60,7 +57,6 @@ class Register(PhishingRequestHandler):
                 "group": assign_group(),
                 "created_on": datetime.now(),
                 "browser": browser,
-                "version": version,
                 "debug": debug,
                 "checkins": [],
                 "pws": [],
@@ -211,12 +207,16 @@ class EmailUpdate(PhishingRequestHandler):
     @tornado.gen.coroutine
     def get(self):
         email = self.get_argument('email', False)
+        version = self.get_argument("version", False)
         error_msg = None
 
         db = self.settings['db']
 
         if not email:
             error_msg = "Missing email to update"
+
+        if not version:
+            error_msg = "Missing version for update"
 
         if not error_msg:
             query = {"_id": email}
@@ -234,7 +234,14 @@ class EmailUpdate(PhishingRequestHandler):
 
         if not error_msg:
             update_query = {"_id": email}
-            update_data = {"$push": {"checkins": datetime.now()}}
+            update_data = {
+                "$push": {
+                    "checkins": {
+                        "time": datetime.now(),
+                        "version": version
+                    }
+                }
+            }
             try:
                 yield db.emails.update(update_query, update_data)
             except Exception, e:
