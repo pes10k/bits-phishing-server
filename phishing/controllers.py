@@ -18,8 +18,8 @@ def assign_group():
     next_group = None
     if not assign_group._last_group or assign_group._last_group == "control":
         next_group = "reauth"
-    elif assign_group._last_group == "reauth":
-        next_group = "autofill"
+    # elif assign_group._last_group == "reauth":
+    #     next_group = "autofill"
     else:
         next_group = "control"
     assign_group._last_group = next_group
