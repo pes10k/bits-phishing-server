@@ -22,9 +22,9 @@ script_dir = os.path.abspath(os.path.dirname(__file__))
 root_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 config = imp.load_source('config', os.path.join(root_dir, 'config.py'))
 
-m = config.mongo
+m = config.mongo_params
 connection = pymongo.MongoClient(m['host'], m['port'])
-db = connection[m['dbname']]
+db = connection[config.mongo_database]
 
 if args.active:
     threshold = datetime.datetime.now() - datetime.timedelta(days=2)
