@@ -1,3 +1,4 @@
+#!/usr/bin/python
 """
 CLI for interacting with the MongoDB instance that stores current plugin
 instance.  More useful information / options are available with --help
