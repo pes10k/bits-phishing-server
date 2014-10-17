@@ -83,7 +83,8 @@ if args.group:
 
 if args.misses:
     for row in db.emails.find({}):
-        if "checkins" not in row:
+        if "checkins" not in row or len(row["checkins"]) < 2:
+            print row["_id"]
             continue
         prev_time = None
         adjoining_dates = []
@@ -92,6 +93,6 @@ if args.misses:
             if prev_time:
                 adjoining_dates.append((prev_time, time))
             prev_time = time
-        max_time = max([p - c for p, c in adjoining_dates])
+        max_time = max([b - a for a, b in adjoining_dates])
         if max_time > threshold_diff:
             print row["_id"]
