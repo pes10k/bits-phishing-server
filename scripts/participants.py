@@ -32,6 +32,10 @@ parser.add_argument("--misses", "-m", action="store_true",
                     help="Print out a list of accounts that have participated" +
                          "but which have a gap of greater than {--days} " +
                          "in their reporting.")
+parser.add_argument("--hits", "-h", action="store_true",
+                    help="Print out a list of email accounts that have phoned" +
+                         "home at least ever {--days} days, and thus are " +
+                         "eligable to be included in the final count.")
 args = parser.parse_args()
 
 
@@ -81,7 +85,10 @@ if args.group:
         if is_active(row):
             print row["_id"]
 
-if args.misses:
+if args.misses and args.hits:
+    raise Exception("Cannot ask for hits and misses at the same time.")
+
+if args.misses or args.hits:
     for row in db.emails.find({}):
         if "checkins" not in row:
             continue
@@ -93,5 +100,9 @@ if args.misses:
                 adjoining_dates.append((prev_time, time))
             prev_time = time
         max_time = max([p - c for p, c in adjoining_dates])
-        if max_time > threshold_diff:
+
+        if args.misses and max_time > threshold_diff:
+            print row["_id"]
+
+        if args.hits and max_time <= threshold_diff and is_active(row):
             print row["_id"]
