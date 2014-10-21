@@ -4,10 +4,11 @@ CLI for interacting with the MongoDB instance that stores current plugin
 instance.  More useful information / options are available with --help
 """
 
+import argparse
 import datetime
 import os
 import sys
-from .common import mongo
+from common import mongo
 
 parser = argparse.ArgumentParser(description=sys.modules[__name__].__doc__)
 parser.add_argument("--days", "-d", type=int, default=2,
