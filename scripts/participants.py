@@ -32,7 +32,7 @@ parser.add_argument("--misses", "-m", action="store_true",
                     help="Print out a list of accounts that have participated" +
                          "but which have a gap of greater than {--days} " +
                          "in their reporting.")
-parser.add_argument("--hits", "-h", action="store_true",
+parser.add_argument("--hits", action="store_true",
                     help="Print out a list of email accounts that have phoned" +
                          "home at least ever {--days} days, and thus are " +
                          "eligable to be included in the final count.")
