@@ -5,11 +5,9 @@ instance.  More useful information / options are available with --help
 """
 
 import datetime
-import imp
 import os
 import sys
-import pymongo
-import argparse
+from .common import mongo
 
 parser = argparse.ArgumentParser(description=sys.modules[__name__].__doc__)
 parser.add_argument("--days", "-d", type=int, default=2,
@@ -38,15 +36,7 @@ parser.add_argument("--hits", "-h", action="store_true",
                          "eligable to be included in the final count.")
 args = parser.parse_args()
 
-
-script_dir = os.path.abspath(os.path.dirname(__file__))
-root_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
-config = imp.load_source('config', os.path.join(root_dir, 'config.py'))
-
-m = config.mongo_params
-connection = pymongo.MongoClient(m['host'], m['port'])
-db = connection[config.mongo_database]
-
+db = mongo()
 threshold_diff = datetime.timedelta(days=args.days)
 threshold = datetime.datetime.now() - threshold_diff
 
