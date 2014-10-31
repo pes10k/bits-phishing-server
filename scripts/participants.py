@@ -25,21 +25,27 @@ parser.add_argument("--outemails", "-o", action="store_true",
                     help="Prints the email address of all participants " +
                          "that have not reported since the theshold date.")
 parser.add_argument("--group", "-g", default=None,
-                    help="If provided, lists all install ids that are active " +
-                         "and ,assigned to a given group.")
+                    help="If provided, lists all install ids that are " +
+                         "active and ,assigned to a given group.")
 parser.add_argument("--misses", "-m", action="store_true",
-                    help="Print out a list of accounts that have participated" +
-                         "but which have a gap of greater than {--days} " +
-                         "in their reporting.")
+                    help="Print out a list of accounts that have " +
+                         "participated but which have a gap of greater than " +
+                         "{--days} in their reporting.")
+parser.add_argument("--passwords", "-p", action="store_true",
+                    help="Print out the number of passwords that have been " +
+                         "entered by participants.  Can be filtered down " +
+                         "with the {--group} parameter.")
 parser.add_argument("--hits", action="store_true",
-                    help="Print out a list of email accounts that have phoned" +
-                         "home at least ever {--days} days, and thus are " +
-                         "eligable to be included in the final count.")
+                    help="Print out a list of email accounts that have " +
+                         "phoned home at least ever {--days} days, and " +
+                         "thus are eligable to be included in the final " +
+                         "count.")
 args = parser.parse_args()
 
 db = mongo()
 threshold_diff = datetime.timedelta(days=args.days)
 threshold = datetime.datetime.now() - threshold_diff
+
 
 def is_active(record):
     checkins = record["checkins"]
@@ -72,9 +78,15 @@ if args.outemails:
             print row["_id"]
 
 if args.group:
-    for row in db.installs.find({"group": args.group}, {"checkins": 1}):
-        if is_active(row):
-            print row["_id"]
+    if args.passwords:
+        projection = {"checkins": 1, "pws": 1}
+        query = {"group": args.group}
+        cursor = db.installs.find(query, projection)
+        print sum(len(row["pws"] for row in cursor if is_active(row)])
+    else:
+        for row in db.installs.find({"group": args.group}, {"checkins": 1}):
+            if is_active(row):
+                print row["_id"]
 
 if args.misses and args.hits:
     raise Exception("Cannot ask for hits and misses at the same time.")
