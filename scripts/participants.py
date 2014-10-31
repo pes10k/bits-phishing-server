@@ -77,16 +77,18 @@ if args.outemails:
         if not is_active(row):
             print row["_id"]
 
-if args.group:
-    if args.passwords:
-        projection = {"checkins": 1, "pws": 1}
-        query = {"group": args.group}
-        cursor = db.installs.find(query, projection)
-        print sum(len(row["pws"] for row in cursor if is_active(row)])
-    else:
-        for row in db.installs.find({"group": args.group}, {"checkins": 1}):
-            if is_active(row):
-                print row["_id"]
+if args.passwords:
+    projection = {"checkins": 1, "pws": 1}
+    query = {}
+    if args.group:
+        query['group'] = args.group
+    cursor = db.installs.find(query, projection)
+    print sum([len(row["pws"]) for row in cursor if is_active(row)])
+
+if args.group and not args.passwords:
+    for row in db.installs.find({"group": args.group}, {"checkins": 1}):
+        if is_active(row):
+            print row["_id"]
 
 if args.misses and args.hits:
     raise Exception("Cannot ask for hits and misses at the same time.")
