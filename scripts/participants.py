@@ -110,8 +110,13 @@ if args.passwords:
     else:
         watched_domains = watched_domains()
         count = 0
-        pwd_iterator = (row['pws'] for row in cursor if is_active(row))
-        print sum([1 for r in pwd_iterator if r['domain'] in watched_domain])
+        for row in cursor:
+            if not is_active(row):
+                continue
+            for pwd in row['pws']:
+                if pwd['domain'] in watched_domains:
+                    count += 1
+        print count
 
 if args.group and not args.passwords:
     print "\n".join(ids_in_group(args.group))
