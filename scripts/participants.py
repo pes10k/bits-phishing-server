@@ -8,6 +8,7 @@ import argparse
 import datetime
 import os
 import sys
+import json
 from common import mongo
 
 parser = argparse.ArgumentParser(description=sys.modules[__name__].__doc__)
@@ -34,7 +35,10 @@ parser.add_argument("--misses", "-m", action="store_true",
 parser.add_argument("--passwords", "-p", action="store_true",
                     help="Print out the number of passwords that have been " +
                          "entered by participants.  Can be filtered down " +
-                         "with the {--group} parameter.")
+                         "with the {--group} and {--domains} parameters.")
+parser.add_argument("--domains", action="store_true",
+                    help="Filters down password matches to only include " +
+                         "passwords entered on domains we log users out of.")
 parser.add_argument("--hits", action="store_true",
                     help="Print out a list of email accounts that have " +
                          "phoned home at least ever {--days} days, and " +
@@ -47,12 +51,28 @@ threshold_diff = datetime.timedelta(days=args.days)
 threshold = datetime.datetime.now() - threshold_diff
 
 
+def watched_domains():
+    path_to_rules_file = os.path.join("..", "files", 'cookie-rules.json')
+    domains = None
+    with open(path_to_rules_file, 'r') as h:
+        domains = [r['domain'].strip(".") for r in json.load(h)]
+    return domains
+
+
 def is_active(record):
     checkins = record["checkins"]
     if len(checkins) == 0:
         return False
     latest_checkin = checkins[-1]['time']
     return latest_checkin >= threshold
+
+
+def ids_in_group(group_label, active_only=True):
+    query = {"group": group_label}
+    projection = {"checkins": 1}
+    cursor = db.installs.find(query, projection)
+    return [r['_id'] for r in cursor if not active_only or is_active(r)]
+
 
 if args.active:
     num_active = 0
@@ -83,12 +103,18 @@ if args.passwords:
     if args.group:
         query['group'] = args.group
     cursor = db.installs.find(query, projection)
-    print sum([len(row["pws"]) for row in cursor if is_active(row)])
+    # If we care about all passwords logged, irregardless of domain,
+    # then we just need a simple sum (simple case)
+    if not args.domains:
+        print sum([len(row["pws"]) for row in cursor if is_active(row)])
+    else:
+        watched_domains = watched_domains()
+        count = 0
+        pwd_iterator = (row['pws'] for row in cursor if is_active(row))
+        print sum([1 for r in pwd_iterator if r['domain'] in watched_domain])
 
 if args.group and not args.passwords:
-    for row in db.installs.find({"group": args.group}, {"checkins": 1}):
-        if is_active(row):
-            print row["_id"]
+    print "\n".join(ids_in_group(args.group))
 
 if args.misses and args.hits:
     raise Exception("Cannot ask for hits and misses at the same time.")
