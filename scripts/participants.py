@@ -1,9 +1,10 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 CLI for interacting with the MongoDB instance that stores current plugin
 instance.  More useful information / options are available with --help
 """
 
+import statistics
 import argparse
 import datetime
 import os
@@ -99,7 +100,9 @@ if args.outemails:
 
 if args.passwords:
     projection = {"checkins": 1, "pws": 1}
-    query = {}
+    query = {
+        "_id": {'$nin': ["6c3051a7379542c687253a6b3cddbd9a", "d1109d3b3a3d44109ef8e88aecd5e5d0"]}
+    }
     if args.group:
         query['group'] = args.group
     cursor = db.installs.find(query, projection)
@@ -108,15 +111,18 @@ if args.passwords:
     if not args.domains:
         print sum([len(row["pws"]) for row in cursor if is_active(row)])
     else:
-        watched_domains = watched_domains()
-        count = 0
+        domains = watched_domains()
+        values = []
         for row in cursor:
-            if not is_active(row):
-                continue
+            count = 0
             for pwd in row['pws']:
-                if pwd['domain'] in watched_domains:
-                    count += 1
-        print count
+                count += int(any([d in pwd['domain'] for d in domains]))
+            values.append(count)
+        measures = (("Mean", statistics.mean), ("Min", min), ("Max", max),
+                    ("St Dev", statistics.stdev), ("Sum", sum),
+                    ("Count", len))
+        for title, func in measures:
+            print "{}: {}".format(title, func(values))
 
 if args.group and not args.passwords:
     print "\n".join(ids_in_group(args.group))
